@@ -67,7 +67,7 @@ TEST:
   BBOX_THRE: 1.0
   IMAGE_THRE: 0.0
   IN_VIS_THRE: 0.2
-  MODEL_FILE: 'models/pytorch/pose_coco/lpn_101_256x192.pth'
+  MODEL_FILE: 'model/coco/lpn_101_256x192.pth'
   NMS_THRE: 1.0
   OKS_THRE: 0.9
   FLIP_TEST: true

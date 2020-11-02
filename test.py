@@ -53,6 +53,9 @@ def parse_args():
                         help='log directory',
                         type=str,
                         default='')
+    parser.add_argument('--save_trace',
+                        help='save trace',
+                        action='store_true')
 
     args = parser.parse_args()
     return args
@@ -84,6 +87,11 @@ def main():
         model.load_state_dict(torch.load(model_state_file))
 
     model = torch.nn.DataParallel(model, device_ids=cfg.GPUS).cuda()
+
+    # if args.save_trace:
+    #     example = torch.rand(1, 3, 256, 192).cuda()
+    #     traced_script_module = torch.jit.trace(model.half().module, example)
+    #     traced_script_module.save("lpn_resnet50_trace.pt")
 
     # define loss function (criterion) and optimizer
     criterion = JointsMSELoss(use_target_weight=cfg.LOSS.USE_TARGET_WEIGHT).cuda()

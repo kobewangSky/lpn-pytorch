@@ -165,7 +165,7 @@ def validate(config, val_loader, val_dataset, model, criterion, output_dir,
             score = meta['score'].numpy()
 
             if config.TEST.SOFT_ARGMAX:
-                preds, maxvals = get_final_preds_using_softargmax(config, output.clone(), c, s)
+                preds, maxvals, _ = get_final_preds_using_softargmax(config, output.clone(), c, s)
             else:
                 preds, maxvals = get_final_preds(config, output.clone().cpu().numpy(), c, s)
 
