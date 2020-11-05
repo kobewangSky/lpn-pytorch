@@ -33,6 +33,7 @@ from utils.utils import create_logger, get_model_summary
 import dataset
 import models
 from core.inference import get_final_preds, get_final_preds_using_softargmax
+from utils.transforms import get_affine_transform
 from models.lpn import get_pose_net
 from utils.transforms import flip_back
 import cv2
@@ -46,6 +47,18 @@ input_size = 512
 wight = 192
 hight = 256
 aspect_ratio = wight * 1.0 / hight
+
+point_color2 = [(240, 2, 127), (240, 2, 127), (240, 2, 127),
+                (240, 2, 127), (240, 2, 127),
+                (255, 255, 0), (169, 209, 142),
+                (255, 255, 0), (169, 209, 142),
+                (255, 255, 0), (169, 209, 142),
+                (252, 176, 243), (0, 176, 240), (252, 176, 243),
+                (0, 176, 240), (252, 176, 243), (0, 176, 240),
+                (255, 255, 0), (169, 209, 142),
+                (255, 255, 0), (169, 209, 142),
+                (255, 255, 0), (169, 209, 142)]
+
 
 def _xywh2cs( x, y, w, h):
     center = np.zeros((2), dtype=np.float32)
@@ -63,6 +76,8 @@ def _xywh2cs( x, y, w, h):
         scale = scale * 1.25
 
     return center, scale
+
+
 
 def get_yolactjit_result():
 
@@ -103,10 +118,20 @@ def get_yolactjit_result():
                 x1 = temp_box[box_index, 0]
                 y2 = temp_box[box_index, 3]
                 x2 = temp_box[box_index, 2]
-                img_crop = img[ int(y1):int(y2), int(x1):int(x2), :]
-                img_crop = cv2.resize(img_crop, (wight,hight))
-                temp_img.append(img_crop)
+
                 c, s = _xywh2cs(x1, y1, x2 - x1, y2 - y1)
+
+                trans = get_affine_transform(c, s, 0, np.array([wight, hight]))
+                input = cv2.warpAffine(
+                    img,
+                    trans,
+                    (int(wight), int(hight)),
+                    flags=cv2.INTER_LINEAR)
+
+                # img_crop = img[ int(y1):int(y2), int(x1):int(x2), :]
+                # img_crop = cv2.resize(img_crop, (wight,hight))
+                temp_img.append(input)
+
                 c_list.append(c)
                 s_list.append(s)
         output['full_image'] = img
@@ -148,7 +173,7 @@ def main():
     ])
     model.eval()
 
-    for it in yolact_result:
+    for image_index, it in enumerate(yolact_result):
 
         transforms_image = []
         for crop_image in it['crop_image']:
@@ -193,9 +218,10 @@ def main():
 
         preds, maxvals, preds_ori  = get_final_preds_using_softargmax(cfg, output.clone(), np.array(it['c']).copy(), np.array(it['s']).copy())
         temp_image = it['full_image'].copy()
-        for point_for_image in preds:
-            for point in point_for_image:
-                cv2.circle(temp_image, (int(point[0]), int(point[1])),0, (0, 255, 0), 2)
+        for point_for_image in(preds):
+            for index, point in enumerate(point_for_image):
+                cv2.circle(temp_image, (int(point[0]), int(point[1])),1, point_color2[index], 3)
+        cv2.imwrite('result_{}.png'.format(image_index), temp_image)
         print("")
 
         print("")
